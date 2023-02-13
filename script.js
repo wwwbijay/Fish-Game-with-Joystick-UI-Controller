@@ -45,7 +45,7 @@ class Button {
     this.distance = 0;
 
     if (type === undefined) this.type = "analog";
-    this.fillColorOpacity = 0.3;
+    this.fillColorOpacity = 0.9;
     this.pressed = false;
     //ourter circle
     this.X = this.x;
@@ -59,6 +59,7 @@ class Button {
       let Y = this.Y - this.y;
 
       let active_dist = Math.sqrt(X * X + Y * Y);
+      this.distance = active_dist;
 
       if (active_dist > this.R) {
         this.dx = X / active_dist;
@@ -73,7 +74,6 @@ class Button {
         this.y += overlapY;
       }
 
-      
       //inner arc
       ctx.beginPath();
       ctx.save();
@@ -160,15 +160,14 @@ class Button {
   }
 
   drawText() {
+    ctx.font = '14px Tahoma';
     ctx.fillStyle = `rgba(255,255,255,1)`;
-    ctx.fillText("x " + this.dx, 22, 22);
-    ctx.fillText("y " + this.dy, 22, 44);
-    ctx.fillText("pressed " + this.pressed, 22, 66);
-    this.distance = Math.sqrt(this.dx*this.dx, this.dy* this.dy);
-   
-    ctx.fillText("Speed " + this.distance, 22, 88);
+    ctx.fillText("x " + this.dx, canvas.width - 200, 44);
+    ctx.fillText("y " + this.dy, canvas.width - 200, 66);
+    ctx.fillText("pressed " + this.pressed, canvas.width - 200, 88);
   }
 }
+let analog = new Button(90, canvas.height - 90, 30);
 
 //Player
 //Handle functions of main characters
@@ -189,49 +188,46 @@ class Player {
     this.frame = 0;
     this.spriteWidth = 498;
     this.spriteHeight = 327;
+    this.facingLeft = true;
   }
 
   update() {
-    const dx = this.x - mouse.x;
-    const dy = this.y - mouse.y;
+ 
+    //calculate theta for joystick
+    let theta1 = Math.atan2(analog.dy, analog.dx);
+    this.angle = theta1;
+    
+    let X = analog.X - analog.x;
+    let Y = analog.Y - analog.y;
 
-    let theta = Math.atan2(dy, dx);
-    this.angle = theta;
+    if (X != 0) {
+      this.x -= analog.dx * 3;
+    }else{
+      this.x -=0;
+    }
+    if (Y != 0) {
+      this.y -= analog.dy * 3;
+    }else{
+      this.y -=0;
+    }
 
-    if (this.x != mouse.x) {
-      this.x -= dx / 22;
-    }
-    if (this.y != mouse.y) {
-      this.y -= dy / 22;
-    }
   }
 
   draw(context) {
-    //draw line between player and mouse click point.
-    if (mouse.click) {
-      context.lineWidth = 0.2;
-      context.beginPath();
-      context.moveTo(this.x, this.y);
-      context.lineTo(mouse.x, mouse.y);
-      context.stroke();
-    }
-
-    //draw circle representation of player
-
-    // context.fillStyle = "red";
-    // context.beginPath();
-    // context.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-    // context.fill();
-    // context.closePath();
-
+ 
     //Draw Player score
     context.fillStyle = "black";
     context.fillText("Score:" + score, 20, 50);
+    
+    //Button info
+    let X = analog.X - analog.x;
+    let Y = analog.Y - analog.y;
 
     context.save();
     context.translate(this.x, this.y);
     context.rotate(this.angle);
-    if (this.x >= mouse.x) {
+
+    if (X > 0) {
       context.drawImage(
         playerLeft,
         this.frameX * this.spriteWidth,
@@ -243,7 +239,8 @@ class Player {
         this.spriteWidth / 4,
         this.spriteHeight / 4
       );
-    } else {
+      this.facingLeft = true;
+    } else if (X < 0) {
       context.drawImage(
         playerRight,
         this.frameX * this.spriteWidth,
@@ -255,6 +252,33 @@ class Player {
         this.spriteWidth / 4,
         this.spriteHeight / 4
       );
+      this.facingLeft = false;
+    }else{
+      if(this.facingLeft)
+        context.drawImage(
+          playerLeft,
+          this.frameX * this.spriteWidth,
+          this.frameY * this.spriteHeight,
+          this.spriteWidth,
+          this.spriteHeight,
+          0 - this.spriteWidth / 8,
+          0 - this.spriteHeight / 8,
+          this.spriteWidth / 4,
+          this.spriteHeight / 4
+        );
+      else
+      context.drawImage(
+        playerRight,
+        this.frameX * this.spriteWidth,
+        this.frameY * this.spriteHeight,
+        this.spriteWidth,
+        this.spriteHeight,
+        0 - this.spriteWidth / 8,
+        0 - this.spriteHeight / 8,
+        this.spriteWidth / 4,
+        this.spriteHeight / 4
+      );
+
     }
     context.restore();
   }
@@ -422,12 +446,11 @@ function handleGameOver() {
 }
 
 //Animation Loop
-let analog = new Button(90, canvas.height - 90, 30);
 
 function animate() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);  
   addBubbles();
-  handleEnemy();
+  // handleEnemy();
   player.update();
   player.draw(ctx);
   analog.draw();
@@ -435,6 +458,7 @@ function animate() {
   if (!gameOver) requestAnimationFrame(animate);
   gameFrame++;
 }
+
 analog.addEvent();
 animate();
 window.addEventListener("resize", () => {
