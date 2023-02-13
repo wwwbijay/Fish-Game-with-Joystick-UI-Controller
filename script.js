@@ -3,8 +3,8 @@ const canvas = document.getElementById("canvas1");
 const ctx = canvas.getContext("2d");
 const canvasPos = canvas.getBoundingClientRect();
 
-canvas.width = 600;
-canvas.height = 400;
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
 
 let score = 0;
 let gameFrame = 0;
